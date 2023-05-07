@@ -1,5 +1,5 @@
 # DS5110-using-R-Programming
-Introduction to Data Management and Processing using R
+Introduction to Data Management and Processing using R : The taks performed depict the practical issues and techniques for data importing, tidying, transforming, and modeling.
 
 Datasets Used : 
 
