@@ -1,0 +1,265 @@
+---
+title: "Homework5"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-03-27"
+---
+
+```{r}
+# Importing the libraries:
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(modelr)
+```
+
+## Problem 1
+
+I decided to chose the paper of my fellow classmate "Aushee Khamesra".
+Data Source: https://www.kaggle.com/datasets/johnsmith88/heart-disease-dataset
+
+As discussed in the flash paper, the steps taken for the pre-processing of the
+data were to import any empty values as NA.
+
+Since data's columns are already formatted properly so no other steps were 
+followed as described in the flash paper.
+
+Also, as mentioned by author, I have transformed data to add column `gender`
+and disease_status. These columns reflected the binary values that were provided
+in the sex and target columns in a text format.
+
+```{r}
+# Importing and cleaning the dataset.
+
+data <- read.csv("heart.csv", na.strings = c("", "NA"))
+head(data)
+```
+
+```{r}
+# Examining the datase for columns.
+names(data)
+```
+
+```{r}
+# Transforming the dataset as described in the paper.
+
+data$gender <- ifelse(data$sex == 0, "Female", "Male")
+
+data$disease_status <- ifelse(data$target == 0, "No Disease", "Disease")
+```
+
+## Problem 2
+
+As described in the paper, I have created a box plot that separates the patients
+by gender (Male/Female) and further separates each gender based on if they have
+heart disease or not. I have also tried to add a dashed line representing the
+average max heart rate to create a plot similar to the author.
+
+```{r}
+# Calculating the average value for the max heart rate column.
+averagevalue <- tapply(data$thalach, data$gender, mean)
+
+# Plotting the graph.
+ggplot(data, aes(x = gender, y = thalach, fill = disease_status)) +
+  geom_boxplot(alpha = 0.3) +
+  facet_wrap(~gender, scales = "free_x") +
+  labs(x = "Gender", y = "Max Heart Rate", fill = "Disease Status") +
+  ggtitle("Distribution of Max Heart Rate by Gender (With/Without 
+          a Heart Disease)") +
+   stat_summary(fun = mean, geom = "errorbar", aes(ymax = ..y.., ymin = ..y..), 
+               color = "red", linetype = "dashed", width = 0.68, size = 0.75, 
+               position = position_dodge(width = 0.75))
+```
+
+
+## Problem 3
+
+```{r}
+# Loading the data:
+load("37938-0001-Data.rda") 
+df <-da37938.0001
+```
+
+
+```{r}
+# Partitioning the dataset into training and test data:
+set.seed(2)
+df_part <- resample_partition(df,p=c(train=0.5, test=0.5))
+df_part
+```
+
+```{r}
+# Fitting different models with candidate predictors to find the suitable one:
+fit_1 <- lm((LIFESAT_I) ~ (SOCIALWB_I), data=df_part$train)
+fit_2 <- lm((LIFESAT_I) ~ (NONAFFIRM_I), data=df_part$train)
+fit_3 <- lm((LIFESAT_I) ~ (NONDISCLOSURE_I), data=df_part$train)
+fit_4 <- lm((LIFESAT_I) ~ (HCTHREAT_I), data=df_part$train)
+fit_5 <- lm((LIFESAT_I) ~ (KESSLER6_I), data=df_part$train)
+fit_6 <- lm((LIFESAT_I) ~ (EVERYDAY_I), data=df_part$train)
+```
+
+```{r}
+# Printing Root mean square error for all the models to find suitable predictor:
+rmse(fit_1, df_part$test)
+rmse(fit_2, df_part$test)
+rmse(fit_3, df_part$test)
+rmse(fit_4, df_part$test)
+rmse(fit_5, df_part$test)
+rmse(fit_6, df_part$test)
+```
+
+## Observation:
+From the above data, we observe that the Lowest RMSE is for Mental distress/
+disorder i.e 1.339974, so this is the best single predictor for life satisfaction
+based on the RMSE values.
+
+
+## Problem 4
+
+```{r}
+# Function for performing one step using RMSE:
+step1 <- function(response, predictors, candidates, partition)
+{
+  rhs <- paste0(paste0(predictors, collapse="+"), "+", candidates)
+  formulas <- lapply(paste0(response, "~", rhs), as.formula)
+  rmses <- sapply(formulas,
+                  function(fm) rmse(lm(fm, data=partition$train),
+                                    data=partition$test))
+  names(rmses) <- candidates
+  attr(rmses, "best") <- rmses[which.min(rmses)]
+  rmses
+}
+```
+
+Initializing a variable for tracking model:
+
+```{r}
+model <- NULL
+```
+
+
+Step 1 (no variables): In the first step, RMSE is calculated without any
+predictors and we observe that `KESSLER6_I` has the lowest value.(i.e 1.339974).
+
+
+```{r}
+preds <- "1"
+cands <- c("SOCIALWB_I", "NONAFFIRM_I", "NONDISCLOSURE_I", "HCTHREAT_I",
+          "KESSLER6_I", "EVERYDAY_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+Step 2 : We add `KESSLER6_I` variable to the predictors and further calculate 
+RMSE to observe that `SOCIALWB_I` has the lowest RMSE. There is a significant
+change in the RMSE value in this step.
+
+
+```{r}
+preds <- "KESSLER6_I"
+cands <- c("SOCIALWB_I", "NONAFFIRM_I", "NONDISCLOSURE_I", "HCTHREAT_I", "EVERYDAY_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+Step 3 : We add `SOCIALWB_I` variable to the predictors and further calculate 
+RMSE to observe that `EVERYDAY_I ` has the lowest RMSE in this step.
+
+
+```{r}
+preds <- c("KESSLER6_I","SOCIALWB_I")
+cands <- c("NONAFFIRM_I", "NONDISCLOSURE_I", "HCTHREAT_I", "EVERYDAY_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+Step 4 : We add `EVERYDAY_I` variable to the predictors and further calculate 
+RMSE to observe that `NONDISCLOSURE_I ` has the lowest RMSE in this step. We observe
+that the RMSE value change over this step is not that significant.
+
+
+```{r}
+preds <- c("KESSLER6_I","SOCIALWB_I", "EVERYDAY_I")
+cands <- c("NONAFFIRM_I", "NONDISCLOSURE_I", "HCTHREAT_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+Step 5 : We add `NONDISCLOSURE_I` variable to the predictors and further calculate 
+RMSE to observe that `HCTHREAT_I ` has the lowest RMSE in this step. 
+
+
+```{r}
+preds <- c("KESSLER6_I","SOCIALWB_I", "EVERYDAY_I", "NONDISCLOSURE_I")
+cands <- c("NONAFFIRM_I", "HCTHREAT_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+Step 6: We add `HCTHREAT_I` variable to the predictors and further calculate 
+RMSE to observe that `NONAFFIRM_I ` increase the RMSE value in this step.
+
+
+```{r}
+preds <- c("KESSLER6_I","SOCIALWB_I", "EVERYDAY_I", "NONDISCLOSURE_I", "HCTHREAT_I")
+cands <- c("NONAFFIRM_I")
+s1 <- step1("LIFESAT_I", preds, cands, df_part)
+
+model <- c(model, attr(s1, "best"))
+s1
+```
+
+As the RMSE has increased from 1.279659 to 1.286338, so this would be last step,
+and we do not include `NONAFFIRM_I ` in our final model.
+
+## Observation:
+
+From the above steps, we can conclude that Mental distress/disorder - `KESSLER6_I`, 
+Social well being - `SOCIALWB_I` and Everyday discrimination - `EVERYDAY_I` will 
+be the 3 best predictors for Satisfaction of life and will help us get a lower
+RMSE value while modelling.
+
+
+## Problem 5:
+
+```{r}
+# Plotting how adding each variable affects the RMSE 
+
+step_model <- tibble(index=seq_along(model),
+                     variable=factor(names(model), levels=names(model)),
+                     RMSE=model)
+
+ggplot(step_model, aes(y=RMSE)) +
+  geom_point(aes(x=variable)) +
+  geom_line(aes(x=index)) +
+  labs(title="Stepwise model selection") +
+  theme_minimal()
+```
+
+## Observation
+
+From the above graph and from the values calculated for Problem 4, we observe that
+adding Mental distress/disorder - `KESSLER6_I`, Social well being - `SOCIALWB_I`
+and Everyday discrimination - `EVERYDAY_I` reduce the RMSE values significantly. 
+
+Addition of the `NONDISCLOSURE_I` parameter to our model, reduces the RMSE values 
+from 1.280575 to 1.279944 which is a significantly lower change.
+
+Adding any other parameters after that do not really help reducing the RMSE values
+and eventually adding the `NONAFFIRM_I` to the parameters increase the RMSE value.
+
+As we can stop adding variables when improvement is small, hence I believe it 
+would be reasonable to chose the simpler model and build the model with 3 predictor 
+variables `KESSLER6_I`, `SOCIALWB_I` and `EVERYDAY_I` as these parameters 
+significantly affect the life satisfaction of trans people.

@@ -1,0 +1,457 @@
+---
+title: "Homework 4"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-03-10"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Loading the required libraries.
+library(ggplot2)
+library(dplyr)
+library(modelr)
+```
+
+```{r}
+# Loading the data.
+load(file = '37938-0001-Data.rda')
+df<-da37938.0001
+```
+
+```{r}
+# Subset the required columns.
+dfdata1 <- df %>% select(RACE,WEIGHT) 
+head(dfdata1)
+```
+```{r}
+## Replacing the numbering in RACE column with space 
+dfdata1$RACE <- gsub("^\\(\\d+\\)\\s+", "", dfdata1$RACE)
+head(dfdata1)
+```
+```{r}
+# Calculating the proportion using un-weighted column.
+freqTable <- table(dfdata1$RACE)
+totalCount <- sum(freqTable)
+unweightedProportion = freqTable/totalCount
+dfdata1final<-data.frame(values = unweightedProportion )
+dfdata1final
+```
+
+```{r}
+# Plotting the graph for un-weighted proportion of trans people of each race/ethnicity.
+ggplot(dfdata1final, aes(x=values.Var1, y = values.Freq)) +
+geom_bar(stat = "identity" , fill="lightpink") +
+labs(title="Unweighted proportions of trans people of each Race/Ethnicity",
+x="Race", y="Unweighted Proportions") +
+coord_flip() +
+theme_minimal()
+```
+```{r}
+# Calculating the proportion using weighted column.
+dfdata1weight <- dfdata1 %>% group_by(RACE) %>% 
+  summarise(weights = sum(WEIGHT))%>%
+  mutate(weightedproportion = weights / sum(weights))
+dfdata1weight
+```
+
+```{r}
+# Plotting the graph for weighted proportion of trans people of each race/ethnicity.
+ggplot(dfdata1weight, aes(x=RACE, y= weightedproportion)) +
+geom_bar(stat = "identity" , fill="lightblue") +
+labs(title="Weighted proportions of trans people of each Race/Ethnicity",
+x="Race", y="Weighted Proportions")  +
+coord_flip() +
+theme_minimal()
+```
+
+## Observations:
+
+From the above graphs, we can observe that in both weighted and un-weighted
+graphs the proportion of trans people of White race/ethnicity is the highest. 
+
+In the graph for "Un-weighted proportion of trans people of each race and ethnicity", 
+Middle Eastern race/ethnicity has the lowest proportion, however in the 
+"Weighted proportion of trans people of each race and ethnicity", American Indian
+is the least.
+
+On comparing both the graphs, we observe that the proportion of White race/ethnicity
+has decreased from 0.68 for un-weighted to 0.56 for weighted and similarly the
+proportion of American Indian decreased from 0.007 for un-weighted to 0.003
+for weighted which means both these races were over-represented in the survey 
+sample compared to the population. Other than this, population of all other 
+races have increased. 
+
+## Problem 2
+
+```{r}
+## Subset the required columns
+dfdata2 <- df %>% select(SEXUALID,WEIGHT)
+head(dfdata2)
+```
+
+```{r}
+## Replacing the numbering in SEXUALID column with space 
+dfdata2$SEXUALID <- gsub("^\\(\\d+\\)\\s+", "", dfdata2$SEXUALID)
+head(dfdata2)
+```
+
+```{r}
+# Calculating the proportion using un-weighted column.
+freqTable <- table(dfdata2$SEXUALID)
+totalCount <- sum(freqTable)
+unweightedProportion = freqTable/totalCount
+dfdata2final<-data.frame(values = unweightedProportion )
+dfdata2final
+```
+
+```{r}
+# Plotting the graph for un-weighted proportion of trans people of each sexual orientation.
+ggplot(dfdata2final, aes(x=values.Var1, y = values.Freq)) +
+geom_bar(stat = "identity" , fill="lightpink") +
+labs(title="Unweighted proportions of trans people of each sexual
+orientation",
+x="Sexual Orientation", y="Unweighted Proportions") +
+coord_flip() +
+theme_minimal()
+```
+
+```{r}
+# Calculating the proportion using weighted column.
+dfdata2weight <- dfdata2 %>% group_by(SEXUALID) %>% 
+filter(!is.na(SEXUALID))  %>%
+summarise(weights = sum(WEIGHT))%>%
+mutate(weightedproportion = weights / sum(dfdata2$WEIGHT))
+dfdata2weight
+```
+
+```{r}
+# Plotting the graph for weighted proportion of trans people of each sexual orientation.
+ggplot(dfdata2weight, aes(x=SEXUALID, y= weightedproportion)) +
+geom_bar(stat = "identity" , fill="lightblue") +
+labs(title="Weighted proportions of trans people of each sexual orientation",
+x="Sexual Orientation", y="Weighted Proportions") +
+coord_flip() +
+theme_minimal()
+```
+
+## Observation:
+
+From the above graphs, we can observe that in the un-weighted graphs the proportion 
+of trans people of Straight/Heterosexual sexual orientation is the highest whereas
+in the weighted graph, the proportion of Bisexual orientation is the highest. 
+
+In the graph for "Un-weighted proportion of trans people of each sexual orientation", 
+Same-Gender loving and asexual spectrum  have a lower representation, however in the 
+"Weighted proportion of trans people of each sexual orientation", Same-Gender loving
+has the lowest proportion.
+
+On comparing both the graphs, the proportion of Asexual spectrum and Pansexual 
+orientation show significant increase from un-weighted to weighted however
+the proportion of Straight/Heterosexual sexual orientation add same-gender loving
+decreases from un-weighted to weighted.
+
+## PROBLEM 3
+
+Graph 1 :
+
+```{r}
+# Visualization of life satisfaction versus Social well-being.
+ggplot(df, aes(x=(SOCIALWB_I), y=(LIFESAT_I))) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Social well-being", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log(SOCIALWB_I), y=log(LIFESAT_I))) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Social well-being", y="Satisfaction with life") +
+  theme_minimal()
+```
+
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Social well-being"
+has a positive correlation and graph is mostly linear. The data is skewed towards 
+left and performing log-transformation also does not help and hence we cannot 
+use this as an ideal predictor.
+
+Graph 2 :
+
+```{r}
+# Visualization of life satisfaction versus Non-affirmation of gender identity.
+ggplot(df, aes(x=(NONAFFIRM_I), y=(LIFESAT_I))) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Non-affirmation of gender identity", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log2(NONAFFIRM_I), y=log2(LIFESAT_I))) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Non-affirmation of gender identity", y="Satisfaction with life") +
+  theme_minimal()
+```
+
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Non-affirmation of 
+gender identity" has a negative correlation and the graph does not look mostly 
+linear as there a big dip. Performing log-transformation also does not affect the
+relationship and makes the data skewed and hence we cannot use this as an ideal
+predictor.
+
+Graph 3:
+
+```{r}
+# Visualization of life satisfaction versus Non-disclosure of gender identity.
+ggplot(df, aes(x=(NONDISCLOSURE_I), y=(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Non-disclosure of gender identity", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log2(NONDISCLOSURE_I), y=log2(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Non-disclosure of gender identity", y="Satisfaction with life") +
+  theme_minimal()
+```
+
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Non-disclosure 
+of gender identity" has a negative correlation and does not look linear as we
+observe a few dips. Performing log-transformation also does not affect the 
+relationship and hence this cannot be considered as an ideal predictor for modelling.
+
+Graph 4:
+
+```{r}
+# Visualization of life satisfaction versus Healthcare stereotype threat.
+
+ggplot(df, aes(x=(HCTHREAT_I), y=(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Healthcare stereotype threat", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log2(HCTHREAT_I), y=log2(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Healthcare stereotype threat", y="Satisfaction with life") +
+  theme_minimal()
+
+```
+
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Healthcare 
+stereotype threat" has a string negative correlation and looks linear. 
+As the data is not skewed performing log transformation does not make the 
+relationship any more linear than the original graph. Hence this can be an 
+ideal candidate for modelling.
+
+Graph 5:
+
+```{r}
+# Visualization of life satisfaction versus Mental distress/disorder.
+ggplot(df, aes(x=(KESSLER6_I), y=(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Mental distress/disorder", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log(KESSLER6_I), y=log(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Mental distress/disorder", y="Satisfaction with life") +
+  theme_minimal()
+```
+
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Mental 
+distress/disorder" has strong negative correlation and looks look linear. 
+As the data is mostly linearly distributed across the x axis, performing log 
+transformation does not improve the relationship. This can be treated as an ideal
+predictor for modelling. 
+
+Graph 6:
+
+```{r}
+# Visualization of life satisfaction versus Mental distress/disorder.
+ggplot(df, aes(x=(EVERYDAY_I), y=(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Everyday discrimination", y="Satisfaction with life") +
+  theme_minimal()
+
+ggplot(df, aes(x=log(EVERYDAY_I), y=log(LIFESAT_I), na.rm = TRUE)) +
+  geom_point() +
+  geom_smooth() +
+  geom_smooth(method="lm", color="red") +
+  labs(x="Everyday discrimination", y="Satisfaction with life") +
+  theme_minimal()
+```
+## Observation:
+
+The above relationship between "Satisfaction with life" and "Everyday discrimination" 
+has a negative correlation and we can see that the data is skewed. Performing 
+log-transformation also does not affect the relationship and hence this would
+not be an ideal predictor for modelling. 
+
+
+## Problem 4
+
+# Justification:
+
+From the above satisfaction vs the candidate predictors plots,
+I decided to go with the Mental distress/disorder as the predictor for Problem 4.
+After plotting the graphs, Healthcare stereotype threat as well 
+as Mental distress/disorder plots show a linear relationship and hence should be
+suitable to be used for the linear regression model. 
+Using Mental distress/disorder gives a linear qq-plot which further
+helps verify that this can be treated as an ideal predictor.
+
+```{r}
+# Linear regression model for life satisfaction using a single predictor:
+fit1 <- lm((LIFESAT_I) ~ (KESSLER6_I), data=df)
+summary(fit1)
+```
+
+```{r}
+# Plotting the predictions.
+df %>%
+  add_predictions(fit1) %>%
+  ggplot(aes(x=KESSLER6_I)) +
+  geom_point(aes(y=LIFESAT_I)) +
+  geom_line(aes(y=pred), color="red", size=1) +
+  coord_cartesian(xlim=range(df$KESSLER6_I),
+                  ylim=range(df$LIFESAT_I)) +
+  labs(x="Mental distress/disorder", y="Satisfaction with life") +
+  theme_minimal()
+```
+
+```{r}
+# Plotting the residuals
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(KESSLER6_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Mental distress/disorder", y="Residuals") +
+  theme_minimal()
+```
+```{r}
+# Normality of residuals.
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(sample=resid)) +
+  geom_qq() +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=resid)) +
+  geom_histogram(bins=100) +
+  labs(x="Residuals") +
+  theme_minimal()
+```
+
+## Observations:
+
+From the above graphs, the qq-plot looks approximately linear. There are a few
+outliers, however that does not change the linearity of the graph and can be 
+ignored. 
+
+## Problem 5
+
+# Plotting residulas with other candidate predictors:
+
+```{r}
+# Plotting the residuals
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(SOCIALWB_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Social well-being", y="Residuals") +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(NONAFFIRM_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Non-affirmation of gender identity", y="Residuals") +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(NONDISCLOSURE_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Non-disclosure of gender identity", y="Residuals") +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(HCTHREAT_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Healthcare stereotype threat", y="Residuals") +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit1, "resid") %>%
+  ggplot(aes(x=(EVERYDAY_I))) +
+  geom_point(aes(y=resid)) +
+  labs(x="Everyday discrimination", y="Residuals") +
+  theme_minimal()
+
+```
+## Observation:
+
+From the above residual plots, it can be seen that Healthcare stereotype threat
+and Non-affirmation of gender identity have the most random scatter and can be
+added to the model. In this case, I will be using Healthcare stereotype threat 
+as that generates the most linear QQ plot.
+
+```{r}
+# Linear regression model for life satisfaction using a single predictor:
+fit2 <- lm((LIFESAT_I) ~ (KESSLER6_I) + HCTHREAT_I  , data=df)
+summary(fit2)
+```
+
+```{r}
+# Normality of residuals.
+df %>%
+  add_residuals(fit2, "resid") %>%
+  ggplot(aes(sample=resid)) +
+  geom_qq() +
+  theme_minimal()
+
+df %>%
+  add_residuals(fit2, "resid") %>%
+  ggplot(aes(x=resid)) +
+  geom_histogram(bins=100) +
+  labs(x="Residuals") +
+  theme_minimal()
+```
+
+## Observation:
+
+From the above residual plots, it can be seen that both the predictors combined
+create a linear QQ plot.

@@ -1,0 +1,255 @@
+---
+title: "Homework2"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-02-07"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1.
+
+## Importing the dataset.
+
+```{r}
+library(readr)
+df1 <- read_csv("CO2_emission.csv")
+```
+## Citation and dataset description: 
+
+The data has been collected by the world data bank: https://data.worldbank.org/indicator/EN.ATM.CO2E.PC
+This Dataset consists CO2 emissions in metricton per capita of every country around the world from 1990 to 2019. The Dataset is also available in Kaggle : https://www.kaggle.com/datasets/koustavghosh149/co2-emission-around-the-world
+
+Variables of the dataset :
+Country Name : Name of the countries
+country_code : Code associated with the countries
+Region : Region where the country belongs to
+Indicator Name : CO2 emissions (metric tons per capita) is indicator for all the values
+1990-2019: Years the data has been recorded for
+
+```{r}
+library(tidyverse)
+library(dplyr)
+```
+
+## Viewing the dataset.
+
+```{r}
+summary(df1)
+```
+
+```{r}
+head(df1)
+```
+```{r}
+glimpse(df1)
+```
+
+## Data Tidying and Clening
+
+## Steps performed:
+1. Removed the duplicate column that was present.
+2. Verified the NA values and replaced them with the respective median values.
+3. Using `pivot_longer` to fix the years spread across multiple columns.
+4. Changed the column names for better user readability. 
+
+
+```{r}
+## Removing last column as it's duplicate
+df1temp <-df1[, -35]
+head(df1temp)
+```
+
+```{r}
+## Checking for NA values.
+apply(df1temp,2, function(x) sum(is.na(x)))
+```
+
+
+```{r}
+## Mutating the NA values with median values and confirming.
+
+df1final <- df1temp %>% mutate(across(c("1990", "1991", "1992", "1993", "1994","1995", "1996", "1997", "1998", "1999", "2000","2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017","2018","2019...34"), ~replace_na(., median(., na.rm=TRUE))))
+
+apply(df1final,2, function(x) sum(is.na(x)))
+```
+
+```{r}
+## Use `pivot_longer()` to tidy multiple columns.
+
+df1sol <- df1final %>% pivot_longer(cols=c("1990", "1991", "1992", "1993", "1994","1995", "1996", "1997", "1998", "1999", "2000","2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017","2018","2019...34"), names_to = 'Year', values_to ='EmissionValue')
+
+head(df1sol)
+```
+```{r}
+## Renaming columns for consistency.
+df1data <-rename(df1sol, CountryName = "Country Name", countryCode=country_code, IndicatorName="Indicator Name")
+df1data
+```
+
+## Problem 2
+
+## Visualisation:
+
+1. CO2 emission per region:
+
+```{r}
+ggplot(df1data, aes(x = EmissionValue , y = Region, color = Region)) +
+  geom_boxplot() +
+  labs(x = "Emission", y = "Region") +
+  ggtitle("CO2 Emission by Region")
+```
+
+## Observation:
+
+From the above plot, we observe that North America region has the maximum CO2 emission overall.
+
+2. CO2 Emission of Top 10 Countries: 
+```{r}
+## Summing the emission values and filtering out the top 10 countries based on the emission values.
+df1datatop5 <- df1data %>%
+  group_by(CountryName) %>%
+  summarize(total_emission = sum(EmissionValue)) %>%
+  top_n(10, total_emission)
+
+## Plotting the above observation.
+ggplot(df1datatop5, aes(x = reorder(CountryName, -total_emission), y = total_emission, fill = CountryName)) +
+  geom_col() +
+  labs(x = "Country", y = "Total Emission") +
+  ggtitle("CO2 Emission of Top 10 Countries") +
+  coord_flip()
+```
+## Observation:
+
+From the above plot, we observe that Qatar has the highest C02 Emission in the world. 
+
+3. Countries with most CO2 Emission per region
+
+```{r}
+df1datatop <- df1data %>%
+  group_by(Region) %>%
+  top_n(1, EmissionValue)
+
+ggplot(df1datatop, aes(x = Region, y = EmissionValue, fill = CountryName)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Region", y = "Emission") +
+  ggtitle("Top CO2 Emitting Country by Region") +
+  coord_flip()
+
+
+```
+## Observation from all 3 graphs:
+
+From the above graphs, we observe that even though Qatar has the highest CO2 Emission as compared to all other countries, overall North America region sill has the highest CO2 emission. 
+
+## Problem 3
+
+```{r}
+library(readr)
+```
+
+```{r}
+df3 <- read_tsv("26801-0001-Data.tsv",
+                     na = c(-99,"NA"))
+```
+
+```{r}
+df3
+```
+
+```{r}
+## Selecting the required columns and creating a data frame.
+df3sol1 <- select(df3, SCL_UNITID, SCL_NAME, SPORT_CODE, SPORT_NAME,starts_with("APR_RATE"))
+
+## Renaming the columns for better readability. 
+df3sol2 <-rename(df3sol1, schoolId = SCL_UNITID, schoolName=SCL_NAME, sportCode=SPORT_CODE,sportName=SPORT_NAME)
+
+## Mutating the na values with median values.
+df3sol3 <- df3sol2 %>% mutate_if(is.numeric, function(i) ifelse(is.na(i), median(i, na.rm = T),i))
+```
+
+```{r}
+## Printing data frame.
+df3sol3
+```
+
+```{r}
+df3final <- df3sol3 %>% pivot_longer(cols=c("APR_RATE_2014_1000", "APR_RATE_2013_1000", "APR_RATE_2012_1000", "APR_RATE_2011_1000", "APR_RATE_2010_1000","APR_RATE_2009_1000", "APR_RATE_2008_1000", "APR_RATE_2007_1000", "APR_RATE_2006_1000", "APR_RATE_2005_1000", "APR_RATE_2004_1000"), names_to = 'Year', values_to ='APR')
+
+## Changing the values of Year column for better readability
+df3data <- df3final %>% mutate(Year = recode(Year, "APR_RATE_2014_1000" = "2014", "APR_RATE_2013_1000" = "2013", "APR_RATE_2012_1000" = "2012", "APR_RATE_2011_1000" = "2011", "APR_RATE_2010_1000" = "2010","APR_RATE_2009_1000" = "2009", "APR_RATE_2008_1000" = "2008", "APR_RATE_2007_1000" = "2007", "APR_RATE_2006_1000" = "2006", "APR_RATE_2005_1000" = "2005", "APR_RATE_2004_1000" = "2004"))
+
+head(df3data)
+```
+
+## Plotting the graph.
+```{r}
+library(ggplot2)
+ggplot(df3data, aes(x=Year, y=APR, fill = Year)) +
+geom_boxplot(alpha=0.3) +
+stat_summary(fun=mean,geom ="text",col="red", vjust=1.25,
+               aes(label=paste(round(..y..,digits = 1)))) +
+scale_fill_discrete(name="Median APR Values") +
+labs(title="Distribution of APR for years from 2004 to 2014", x="Year", y="APR")+
+theme_minimal()
+```
+
+## Observations:
+From the above graph we can see that the APR values linearly increase over the years from 2004 to 2014. There is a slight decrease for year 2005 but other than that the increase pattern is linear.
+
+
+## Solution 4
+
+
+```{r}
+## Dropping mixed sports.
+dfsol4 <- subset(df3data, sportCode!=38)
+
+## Creating Gender column.
+dfsol4$gender <-ifelse(dfsol4$sportCode <= 18 , 'Men', 'Women')
+
+## Printing.
+head(dfsol4)
+```
+
+
+## Plot for Problem 4
+
+```{r}
+ggplot(dfsol4, aes(x=Year, y=APR, fill=Year)) +
+geom_boxplot(alpha=0.3, aes(fill=factor(..middle..)),show.legend = FALSE) + coord_flip() +
+scale_fill_discrete(name="Year") +
+stat_summary(fun=mean,geom ="text",col="red", vjust=1.25,
+               aes(label=paste(round(..y..,digits = 1)))) +
+facet_wrap(~gender) +
+labs(title="Distribution of APRs over time broken down by gender division", x="Year", y="APR")+
+theme_minimal()
+```
+## Observations:
+
+From the above visualization, we observe the average APR is higher for Women's sports as compared to Men's sports. Individually the APR for Men's sports increase over the years from 2004 to 2014 with an exception in the year 2006 where the APR decreases slightly. For Women's the APR constantly increases over the years and grows from 969.9 in 2004 to 985.2 in 2014. 
+
+## Solution 5
+
+```{r}
+dfsol5 <- dfsol4
+dfsol5$sportName <-str_remove(dfsol5$sportName, "Women's")
+dfsol5$sportName <-str_remove(dfsol5$sportName, "Men's")
+```
+
+```{r}
+head(dfsol5)
+```
+
+```{r}
+ggplot(dfsol5, aes(x=APR, y=sportName)) +
+geom_boxplot(alpha=0.3) +
+facet_wrap(. ~gender) +
+labs(title="Distribution of APRs for both men’s and women’s teams for each sport", x="APR", y="Sport")
+```
+
+## Observations:
+From the above plot, we observe that for sports such as Fencing, Golf, Ice hockey, Lacrosse, Skiing, Tennis, Volley Ball and Water Polo the APR values are same for Men and Women. 

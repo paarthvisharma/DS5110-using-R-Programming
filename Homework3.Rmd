@@ -1,0 +1,387 @@
+---
+title: "Homework3"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-02-17"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1
+
+```{r}
+## Importing the libraries
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(tidyverse)
+```
+
+```{r}
+## Importing data from Enrollment.csv and replacing all the reserve codes as missing values.
+
+df1data = read_csv("Enrollment.csv",na = c(-9,-3,-5,-6,-8,-11,"NA"))
+```
+
+```{r}
+head(df1data)
+```
+
+```{r}
+## Selecting the required columns
+df1datacols <- select(df1data, 
+                      LEAID,
+                      SCHID, 
+                      SCH_ENR_HI_M,
+                      SCH_ENR_HI_F,
+                      SCH_ENR_AM_M,
+                      SCH_ENR_AM_F, 
+                      SCH_ENR_AS_M,
+                      SCH_ENR_AS_F,
+                      SCH_ENR_HP_M,
+                      SCH_ENR_HP_F,
+                      SCH_ENR_BL_M, 
+                      SCH_ENR_BL_F,
+                      SCH_ENR_WH_M, 
+                      SCH_ENR_WH_F,
+                      SCH_ENR_TR_M,
+                      SCH_ENR_TR_F)
+head(df1datacols)
+```
+
+```{r}
+## Using pivot longer to transform data.
+df1datatransform <- 
+  df1datacols %>% pivot_longer(cols=c(`SCH_ENR_HI_M`, 
+                                      `SCH_ENR_HI_F`, 
+                                      `SCH_ENR_AM_M`, 
+                                      `SCH_ENR_AM_F`, 
+                                      `SCH_ENR_AS_M`, 
+                                      `SCH_ENR_AS_F`, 
+                                      `SCH_ENR_HP_M`, 
+                                      `SCH_ENR_HP_F`, 
+                                      `SCH_ENR_BL_M`, 
+                                      `SCH_ENR_BL_F`, 
+                                      `SCH_ENR_WH_M`,
+                                      `SCH_ENR_WH_F`, 
+                                      `SCH_ENR_TR_M`, 
+                                      `SCH_ENR_TR_F`), 
+                               names_to = 'Race Gender',
+                               values_to ='Enrollment Count')
+
+head(df1datatransform)
+```
+
+```{r}
+## Renaming for better readability.
+
+df1datatransform <-
+  rename(df1datatransform, `School ID` = SCHID, `Lea ID` = LEAID)
+df1datarename <- 
+  df1datatransform %>% 
+  mutate(`Race Gender` = recode(`Race Gender`,
+                                "SCH_ENR_HI_M" = "HisanicLatino Male", 
+                                "SCH_ENR_HI_F"= "HisanicLatino Female", 
+                                "SCH_ENR_AM_M" = "AIndianANative Male" ,
+                                "SCH_ENR_AM_F" = "AIndianANative Female",
+                                "SCH_ENR_AS_M" = "Asian Male" ,
+                                "SCH_ENR_AS_F" = "Asian Female",
+                                "SCH_ENR_HP_M" = "NativeHawaiian Male", 
+                                "SCH_ENR_HP_F" = "NativeHawaiian Female", 
+                                "SCH_ENR_BL_M" = "AfricanAmerican Male", 
+                                "SCH_ENR_BL_F" = "AfricanAmerican Female",
+                                "SCH_ENR_WH_M" = "White Male" ,
+                                "SCH_ENR_WH_F" = "White Female",
+                                "SCH_ENR_TR_M" = "TwoRace Male",
+                                "SCH_ENR_TR_F" = "TwoRace Female"))
+
+head(df1datarename)
+```
+
+```{r}
+## Calculating the total enrollment count.
+
+class(df1datarename$`Enrollment Count`)
+totalEnrollment <- sum(df1datarename[,'Enrollment Count'], na.rm = TRUE)
+totalEnrollment
+```
+
+```{r}
+## Aggregating data.
+df1dataagg <- 
+  aggregate(df1datarename$`Enrollment Count`, 
+            list(df1datarename$`Race Gender`),sum, na.rm=TRUE)
+head(df1dataagg)
+```
+```{r}
+## Calculating and add proportion column. 
+df1datafinal <-
+  df1dataagg %>% mutate(proportion = df1dataagg$x / totalEnrollment)
+head(df1datafinal)
+```
+
+
+```{r}
+## Plotting the graph for Problem 1.
+ggplot(df1datafinal, aes(x=`Group.1`, y= proportion)) +
+geom_bar(stat = "identity", fill="lightblue") +
+labs(title="Proportion of enrolled students of every race and gender out 
+the total students across all schools",
+x="Race and Gender", y="Proportion") +
+coord_flip() +
+theme_minimal()
+```
+
+## Observations:
+
+From the above plot, we can see that the proportion of male as well as female
+"Native Hawaiian or Other Pacific Islander" is the lowest out of the total
+number of students across all school.
+
+We can also observe that the proportion of male and female "American Indian or 
+Alaska Native" is the second lowest.
+
+Overall for each Race-Gender combination, we can observe that the proportion of
+males is higher as compared to females.
+
+
+## Problem 2
+
+```{r}
+## Importing data.
+df2data = read_csv("Advanced Placement.csv",na = c(-9,-3,-5,-6,-8,-11,"NA"))
+head(df2data)
+```
+
+```{r}
+## Selecting the required columns.
+df2datacols <-df2data %>%
+  select(LEAID,SCHID,
+         SCH_APENR_HI_M,
+         SCH_APENR_HI_F,
+         SCH_APENR_AM_M,
+         SCH_APENR_AM_F,
+         SCH_APENR_AS_M,
+         SCH_APENR_AS_F, 
+         SCH_APENR_HP_M,
+         SCH_APENR_HP_F,
+         SCH_APENR_BL_M,
+         SCH_APENR_BL_F,
+         SCH_APENR_WH_M,
+         SCH_APENR_WH_F,
+         SCH_APENR_TR_M,
+         SCH_APENR_TR_F) %>%
+  filter(df2data$SCH_APENR_IND == 'Yes')
+
+head(df2datacols)
+```
+
+```{r}
+## Using pivot_longer to transform data.
+df2datatransform <-
+  df2datacols %>% pivot_longer(cols=c(colnames(df2datacols)[-c(1,2)]),
+                               names_to = 'Race Gender',
+                               values_to ='Enrollment Count')
+head(df2datatransform)
+```
+
+```{r}
+## Renaming for better readability.
+df2datatransform <-rename(df2datatransform, `School ID` = SCHID, `Lea ID` = LEAID)
+df2datarename <- 
+  df2datatransform %>%
+  mutate(`Race Gender` =
+           recode(`Race Gender`,
+                  "SCH_APENR_HI_M" = "HisanicLatino Male",
+                  "SCH_APENR_HI_F"= "HisanicLatino Female", 
+                  "SCH_APENR_AM_M" = "AIndianANative Male" ,
+                  "SCH_APENR_AM_F" = "AIndianANative Female", 
+                  "SCH_APENR_AS_M" = "Asian Male" , 
+                  "SCH_APENR_AS_F" = "Asian Female", 
+                  "SCH_APENR_HP_M" = "NativeHawaiian Male", 
+                  "SCH_APENR_HP_F" = "NativeHawaiian Female",
+                  "SCH_APENR_BL_M" = "AfricanAmerican Male",
+                  "SCH_APENR_BL_F" = "AfricanAmerican Female", 
+                  "SCH_APENR_WH_M" = "White Male" , 
+                  "SCH_APENR_WH_F" = "White Female", 
+                  "SCH_APENR_TR_M" = "TwoRace Male", 
+                  "SCH_APENR_TR_F" = "TwoRace Female"))
+
+head(df2datarename)
+```
+
+```{r}
+## Calculating the total enrollment.
+totalEnrollment <- sum(df2datarename[,'Enrollment Count'], na.rm = TRUE)
+totalEnrollment
+```
+
+
+```{r}
+## Aggregating the data.
+df2dataagg <- 
+  aggregate(df2datarename$`Enrollment Count`, 
+            list(df2datarename$`Race Gender`),sum, na.rm=TRUE) 
+head(df2dataagg)
+```
+
+```{r}
+## Adding the proportion column.
+df2datafinal<- 
+  df2dataagg %>% mutate(proportion = df2dataagg$x / totalEnrollment)
+head(df2datafinal)
+```
+
+```{r}
+## Plotting graph for Problem 2.
+ggplot(df2datafinal, aes(x=`Group.1`, y= proportion)) +
+geom_bar(stat = "identity" , fill="lightpink") +
+labs(title="Proportion of AP students for every race and gender out the
+total AP students across all schools",
+x="Race and Gender", y="Proportion") +
+coord_flip() +
+theme_minimal()
+```
+
+## Observations:
+From the above plot, we can see that the proportion of male as well as female
+"Native Hawaiian or Other Pacific Islander" students in AP class is the lowest 
+out of the total number of AP students across all school. 
+
+We can also observe that the proportion of male and female "American Indian or
+Alaska Native" students in AP class is the second lowest. 
+
+Overall for each Race-Gender combination, we can observe that the proportion of 
+females students is higher as compared to male students.
+
+
+
+## Problem 3
+
+```{r}
+## Making copies of data imported for previous problems.
+df3dataenrollment <- df1datacols
+df3dataap <- df2datacols
+
+head(df3dataenrollment)
+head(df3dataap)
+```
+
+```{r}
+## Adding proportion of students of color out of all enrolled students at the school.
+df3dataenrollment$color <-
+  rowSums(df3dataenrollment[,c(names(df3dataenrollment)[3:12],
+                               names(df3dataenrollment)[15:16])])/rowSums(
+                                 df3dataenrollment[,c(names(df3dataenrollment)
+                                                      [3:16])])
+df3dataenrollment
+```
+
+```{r}
+## Adding the proportion of students of color in at least one AP class out of all students in at least one AP class. 
+
+df3dataap$apcolor <- 
+  rowSums(df3dataap[,c(names(df3dataap)[3:12],
+                       names(df3dataap)[15:16])])/rowSums(
+                         df3dataap[,c(names(df3dataap)[3:16])])
+head(df3dataap)
+```
+
+```{r}
+## Joining both the tables on SCHID and LEAID as by combining both we get unique enteries.
+df3final <- merge(df3dataenrollment,df3dataap,by =c("SCHID","LEAID"))
+head(df3final)
+```
+```{r}
+## Plotting graph for problem 3
+ggplot(df3final, aes(x=`color`, y= `apcolor`)) +
+geom_point() + geom_abline(slope = 1,  color = "yellow") +
+labs(title="Proportion of students of color out of total enrolled students at the
+school vs the proportion of students of color in AP class",
+x="Enrollment Proportion of students of color", y="AP Proportion of students of color") +
+theme_minimal()
+```
+## Observations:
+
+From the above graph we can observe that as the enrollment proportion of students
+of color increase, the proportion of students of color in AP class also increases. 
+
+## Problem 4
+
+```{r}
+library(RSQLite)
+```
+
+```{r}
+con <- dbConnect(SQLite(), "dblp.db")
+```
+
+```{r}
+dbListTables(con)
+```
+
+```{r}
+## Querying general table.
+datageneral <- dbGetQuery(con,
+           "SELECT *
+           FROM general")
+head(datageneral)
+```
+
+```{r}
+## Querying authors table.
+dataauthor <- dbGetQuery(con,
+           "SELECT *
+           FROM authors")
+head(dataauthor)
+```
+
+```{r}
+## Joining both the tables.
+datasol4<-dbGetQuery(con,
+           "SELECT DISTINCT name, year, gender, prob
+           FROM general JOIN authors using(k) WHERE gender IN 
+           ('M','F') AND prob >= 0.90")
+head(datasol4)
+```
+
+
+```{r}
+## Plot for Problem 4.
+ggplot(datasol4, aes(x=year)) +
+geom_bar() + 
+facet_wrap(~gender) +
+labs(title="Total number of distinct male and female authors
+published each year", x="Year", y="Count") +
+theme_minimal()
+```
+## Observations:
+
+From the above graph we can observe that the number of overall authors is 
+increasing over the years. A comparison with respect to gender shows that on 
+average there are more number of male authors than female authors published
+each year. 
+
+## Problem 5
+
+```{r}
+## Plot for Problem 5.
+ggplot(datasol4, aes(x=year, fill = gender)) +
+geom_bar(position = "fill") +
+scale_fill_discrete(name="Gender") +
+labs(title="Proportions of distinct male authors vs distinct female
+authors published each year",
+x="Year", y="Proportion") +
+theme_minimal()
+```
+
+
+## Observation
+
+From the above graph, we observe that for the years 1960-1964, there are no 
+female authors published. Around 1970s the proportion of female authors 
+published starts increasing over the years. Overall, female authors published 
+each year are less as compared to the male authors.

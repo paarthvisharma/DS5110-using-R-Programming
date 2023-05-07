@@ -1,0 +1,230 @@
+---
+title: "Homework1"
+author: "Paarthvi Sharma"
+date: "2023-01-22"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## This is the Homework 1 R Markdown submission for DS5110. 
+
+## Solution 1
+
+## Function definition : imputeNA(data, use.mean = FALSE) where data: A data.frame for which to impute the missing values and use.mean: Use the mean instead of the median for imputing continuous values.
+
+## Code for mode function.
+
+```{r mode}
+mode <- function(data, na.rm = TRUE){
+  # Not considering NA values
+  if(na.rm){ 
+    data = data[!is.na(data)]
+  }
+  # Storing data without duplicate elements
+  tempvalue <- unique(data)
+  count <- tabulate(match(data, tempvalue))
+  tempvalue[count == max(count)]
+}
+```
+
+## Testing mode function.
+
+```{r testmode}
+test <- c("Harlem", NA, "Queens", "Brooklyn", "Brooklyn", NA)
+mode(test)
+```
+
+## Code for Solution 1
+
+```{r}
+imputeNA <- function(data, use.mean = FALSE){
+  cdata <- data
+  for (item in 1:ncol(cdata)) {
+    # Checking for character column types.
+    if(class(cdata[ ,item]) == "character"){
+    # Calling the mode function created above and imputing in case of NA values.
+      cdata[ ,item][is.na(cdata[ ,item])] <- mode(cdata[ ,item], na.rm = TRUE)
+  }else{
+    # If use.mean is True, imputing with mean values otherwise imputing with median values.
+    if(use.mean == TRUE){
+      	cdata[ ,item][is.na(cdata[ ,item])] <- mean(cdata[ ,item], na.rm = TRUE)
+    }else{
+      cdata[,item][is.na(cdata[,item])] <- median(cdata[,item], na.rm = TRUE)
+    }
+  }
+  }
+  return(cdata)
+}
+```
+
+## Testing Code for Solution 1. 
+```{r testcase1}
+
+# Create test dataframe 
+testdf <- data.frame(
+row.names=c("Jack", "Rosa", "Dawn", "Vicki", "Blake", "Guillermo"),
+age=c(24, 23, NA, 25, 32, 19),
+city=c("Harlem", NA, "Queens", "Brooklyn", "Brooklyn", NA),
+gpa=c(3.5, 3.6, 4.0, NA, 3.8, NA))
+
+testdf
+testcase1 <- imputeNA(testdf)
+testcase1
+```
+## Testing Code for Solution 1.
+
+```{r testcase2}
+testdf
+testcase2 <- imputeNA(testdf, use.mean=TRUE)
+testcase2
+```
+
+
+## Solution 2 
+
+## Function definition : countNA(data, byrow = FALSE) where data: A data.frame for which to count the number of missing values and byrow: Should missing values be counted by row (TRUE) or by column (FALSE)
+
+## Code for Solution 2. 
+```{r}
+countNA<- function(data, byrow = FALSE){
+  #If byrow is FALSE, using colSums {Matrix} to get sum of the column objects.
+  if(byrow == FALSE){
+    value<-colSums(is.na(testdf))
+    print(value)
+  }else{
+  #If byrow is TRUE, using rowSums {Matrix} to get sum of the row objects.
+    value<-rowSums(is.na(testdf))
+    print(value)
+  }
+}
+```
+
+## Citation : 
+The above packages have been taken from the R Documentation : 
+Form Row and Column Sums and Means
+(in package Matrix in library /Library/Frameworks/R.framework/Versions/4.2-arm64/Resources/library)
+
+## Testing Code for Solution 2.
+```{r testcase1solution2}
+testdf2 <- data.frame(
+row.names=c("Jack", "Rosa", "Dawn", "Vicki", "Blake", "Guillermo"),
+age=c(24, 23, NA, 25, 32, 19),
+city=c("Harlem", NA, "Queens", "Brooklyn", "Brooklyn", NA),
+gpa=c(3.5, 3.6, 4.0, NA, 3.8, NA))
+
+countNA(testdf2)
+```
+
+## Testing Code for Solution 2.
+
+```{r testcase2solution2}
+countNA(testdf2, byrow=TRUE)
+```
+
+## Solution 3
+
+## Required packages and libraries.
+```{r requirements}
+install.packages('fivethirtyeight' ,repos = "http://cran.us.r-project.org")
+library(fivethirtyeight)
+library(ggplot2)
+```
+
+## Reviewing the summary to analyze the dataset.
+```{r police_killings}
+summary(police_killings)
+```
+
+## Omitting the NA values. 
+```{r}
+plotdf<-na.omit(police_killings)
+```
+
+## Plotting the graph.
+```{r solution3}
+ggplot(plotdf, aes(x=raceethnicity, fill=as.factor(nat_bucket))) +
+  geom_bar(position="dodge") + 
+  scale_fill_discrete(name="National Quintile of Household
+Income") +
+  labs(title="Distribution of Americans killed by police
+by race and income",
+       x="Race and Ethicity", y="Count") +
+  theme_minimal()
+```
+
+
+## Observations:
+Based on the income level, we can observe that people falling in the income level 1 category are being killed the most. 
+
+
+## Solution 4
+
+## Data Set
+```{r}
+congress_age
+```
+
+## Reviewing the summary to analyze the dataset
+```{r}
+summary(congress_age)
+```
+
+
+## Omitting the NA values. 
+```{r}
+testdfcongress_age = na.omit(congress_age)
+```
+
+## Plotting the graph.
+```{r solution4}
+ggplot(testdfcongress_age, aes(x=congress, y=age, fill = as.factor(congress))) +
+geom_boxplot(position="dodge") + 
+scale_fill_discrete(name="Congress Number") +
+facet_wrap(~chamber) + 
+labs(title="Distribution of Ages in US Congress", x="Congress Number", y="Age")+
+theme_minimal()
+```
+
+
+## Observations:
+The median age of the congress members is increasing as observed from the above graphs.On comparing both the graphs, we notice the age distribution of members of senate chamber are higher as compared to the members of house chamber. 
+
+
+## Solution 5
+
+## Data Set
+```{r}
+bechdel
+```
+## Summary
+```{r}
+summary(bechdel)
+```
+
+## Omitting the NA values
+```{r}
+plotbechdel = na.omit(bechdel)
+```
+
+## Plotting the graph.
+```{r solution5}
+ggplot(data = plotbechdel,
+       mapping = aes(x=budget_2013,
+                     y=intgross_2013,
+                     color=as.character(binary))) + 
+geom_point() + geom_smooth() +
+labs(title="Relationship between passing the Bechdel
+test, movie budget and movie worldwide gross", x="Movie Budget", y="Movie Gross")+
+theme_minimal()
+```
+
+## Observations :
+
+In general it can be observed that with increase of movie budget, movie gross also increases. With respect to the Bechdel test, we see that the relationship is linearly increasing in case the Bechdel test passes and exponentially in case of test failing. 
+
+
